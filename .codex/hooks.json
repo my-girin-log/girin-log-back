@@ -1,0 +1,28 @@
+{
+  "//": "OpenAI Codex 용 강제 hook. Claude Code 의 .claude/settings.json 과 같은 강제를 Codex 쪽에도 건다.",
+  "//ref": "hook 스크립트 원본은 vendor/codex/harness/hooks (submodule). 지향 규칙은 AGENTS.md.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SPEC_PATH=vendor/codex/api/openapi.yaml bash ./vendor/codex/harness/hooks/check-spec-drift.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ./.claude/hooks/guard-protected-branch.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

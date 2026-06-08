@@ -1,3 +1,10 @@
+# Java / Gradle
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+out/
+*.class
+
 node_modules/
 dist/
 *.local
@@ -8,3 +15,4 @@ runs/
 .DS_Store
 .idea/
 .vite/
+.claude/settings.local.json
