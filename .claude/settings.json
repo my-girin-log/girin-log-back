@@ -1,0 +1,37 @@
+{
+  "//": "girin-codex 하네스 hook. 원본은 vendor/codex/harness (submodule). 경로/명령은 BE 스택에 맞춰 조정한다.",
+  "//hooks": "PostToolUse=편집 후 포맷·스펙 검증, PreToolUse=보호 브랜치 직접 작업 차단.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ./vendor/codex/harness/hooks/format-and-lint.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "SPEC_PATH=vendor/codex/api/openapi.yaml bash ./vendor/codex/harness/hooks/check-spec-drift.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ./.claude/hooks/guard-protected-branch.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: girin-log
+  datasource:
+    # PostgreSQL 우선 (conventions/coding.md 0절). 값은 환경변수로 주입한다.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/girinlog}
+    username: ${DB_USERNAME:girinlog}
+    password: ${DB_PASSWORD:girinlog}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # 운영에서는 절대 update/create 금지. 스키마는 마이그레이션으로 관리한다.
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  # GitHub OAuth 로그인. client-id/secret 은 환경변수로만 주입한다(커밋 금지).
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:}
+            client-secret: ${GITHUB_CLIENT_SECRET:}
+            scope: read:user
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+# 도메인 정책 상수의 기본값(코드의 상수와 동기화 유지). conventions/api.md 참고.
+girinlog:
+  time:
+    zone: Asia/Seoul
+    day-boundary-hour: 6   # 이 서비스의 "하루"는 06:00 KST 에 바뀐다.
+  conversation:
+    max-follow-up-count: 10
