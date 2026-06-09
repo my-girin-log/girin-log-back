@@ -45,4 +45,11 @@ public class UserService {
         user.changeNickname(nickname);
         return user;
     }
+
+    /** 온보딩 완료 처리. 다른 도메인(persona)은 이 공개 메서드로만 호출한다. */
+    public void completeOnboarding(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
+        user.completeOnboarding();
+    }
 }
