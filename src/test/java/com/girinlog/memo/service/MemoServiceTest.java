@@ -40,16 +40,12 @@ class MemoServiceTest {
     @Mock
     private MemoSummaryGenerator memoSummaryGenerator;
 
-    @Mock
-    private MemoUserContext memoUserContext;
-
     private MemoService memoService;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-06-08T20:00:00Z"), ServiceClockConfig.KST);
-        memoService = new MemoService(memoRepository, memoSummaryRepository, memoSummaryGenerator, memoUserContext, clock);
-        given(memoUserContext.currentUserId()).willReturn(USER_ID);
+        memoService = new MemoService(memoRepository, memoSummaryRepository, memoSummaryGenerator, clock);
     }
 
     @Test
@@ -57,7 +53,7 @@ class MemoServiceTest {
     void create_memo_uses_service_day_with_six_am_kst_boundary() {
         given(memoRepository.save(any(Memo.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        Memo memo = memoService.createMemo("오늘 회의 기록");
+        Memo memo = memoService.createMemo(USER_ID, "오늘 회의 기록");
 
         assertThat(memo.serviceDate()).isEqualTo(JUNE_8);
         assertThat(memo.status()).isEqualTo(MemoStatus.DRAFT);
@@ -69,7 +65,7 @@ class MemoServiceTest {
         given(memoRepository.findByUserIdAndServiceDateAndStatusOrderByCreatedAtAsc(USER_ID, JUNE_8, MemoStatus.DRAFT))
                 .willReturn(List.of());
 
-        assertThatThrownBy(() -> memoService.createMemoSummaries(JUNE_8))
+        assertThatThrownBy(() -> memoService.createMemoSummaries(USER_ID, JUNE_8))
                 .isInstanceOfSatisfying(BusinessException.class, exception ->
                         assertThat(exception.errorCode()).isEqualTo(MemoErrorCode.NO_SUMMARIZABLE_MEMO));
     }
@@ -89,7 +85,7 @@ class MemoServiceTest {
         given(memoSummaryRepository.saveAll(any())).willAnswer(invocation -> invocation.getArgument(0));
         given(memoRepository.save(any(Memo.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        MemoSummaryCreation creation = memoService.createMemoSummaries(JUNE_8);
+        MemoSummaryCreation creation = memoService.createMemoSummaries(USER_ID, JUNE_8);
 
         assertThat(sourceMemo.status()).isEqualTo(MemoStatus.SUMMARIZED);
         assertThat(creation.memoSummaries()).hasSize(1);
@@ -106,7 +102,7 @@ class MemoServiceTest {
         given(memoSummaryGenerator.generate(List.of(sourceMemo)))
                 .willThrow(new IllegalStateException("LLM 요약 실패"));
 
-        assertThatThrownBy(() -> memoService.createMemoSummaries(JUNE_8))
+        assertThatThrownBy(() -> memoService.createMemoSummaries(USER_ID, JUNE_8))
                 .isInstanceOf(IllegalStateException.class);
         assertThat(sourceMemo.status()).isEqualTo(MemoStatus.DRAFT);
     }

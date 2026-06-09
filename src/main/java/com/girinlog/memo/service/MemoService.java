@@ -23,40 +23,34 @@ public class MemoService {
     private final MemoRepository memoRepository;
     private final MemoSummaryRepository memoSummaryRepository;
     private final MemoSummaryGenerator memoSummaryGenerator;
-    private final MemoUserContext memoUserContext;
     private final Clock clock;
 
     public MemoService(
             MemoRepository memoRepository,
             MemoSummaryRepository memoSummaryRepository,
             MemoSummaryGenerator memoSummaryGenerator,
-            MemoUserContext memoUserContext,
             Clock clock
     ) {
         this.memoRepository = memoRepository;
         this.memoSummaryRepository = memoSummaryRepository;
         this.memoSummaryGenerator = memoSummaryGenerator;
-        this.memoUserContext = memoUserContext;
         this.clock = clock;
     }
 
     @Transactional(readOnly = true)
-    public List<Memo> listMemos(LocalDate requestedDate) {
-        Long userId = memoUserContext.currentUserId();
+    public List<Memo> listMemos(Long userId, LocalDate requestedDate) {
         LocalDate date = defaultToday(requestedDate);
         return memoRepository.findByUserIdAndServiceDateOrderByCreatedAtAsc(userId, date);
     }
 
     @Transactional
-    public Memo createMemo(String content) {
-        Long userId = memoUserContext.currentUserId();
+    public Memo createMemo(Long userId, String content) {
         Memo memo = Memo.draft(userId, ServiceDay.today(clock), content, now());
         return memoRepository.save(memo);
     }
 
     @Transactional
-    public MemoSummaryCreation createMemoSummaries(LocalDate requestedDate) {
-        Long userId = memoUserContext.currentUserId();
+    public MemoSummaryCreation createMemoSummaries(Long userId, LocalDate requestedDate) {
         LocalDate date = defaultToday(requestedDate);
         List<Memo> sourceMemos = memoRepository.findByUserIdAndServiceDateAndStatusOrderByCreatedAtAsc(
                 userId,
@@ -80,8 +74,7 @@ public class MemoService {
     }
 
     @Transactional(readOnly = true)
-    public List<MemoSummary> listMemoSummaries(LocalDate requestedDate) {
-        Long userId = memoUserContext.currentUserId();
+    public List<MemoSummary> listMemoSummaries(Long userId, LocalDate requestedDate) {
         LocalDate date = defaultToday(requestedDate);
         return memoSummaryRepository.findByUserIdAndServiceDateOrderByCreatedAtAsc(userId, date);
     }
