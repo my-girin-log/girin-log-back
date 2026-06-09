@@ -15,15 +15,6 @@ spring:
       hibernate:
         format_sql: true
     open-in-view: false
-  # GitHub OAuth 로그인. client-id/secret 은 환경변수로만 주입한다(커밋 금지).
-  security:
-    oauth2:
-      client:
-        registration:
-          github:
-            client-id: ${GITHUB_CLIENT_ID:}
-            client-secret: ${GITHUB_CLIENT_SECRET:}
-            scope: read:user
 
 server:
   port: ${SERVER_PORT:8080}
@@ -39,3 +30,15 @@ girinlog:
     day-boundary-hour: 6   # 이 서비스의 "하루"는 06:00 KST 에 바뀐다.
   conversation:
     max-follow-up-count: 10
+  # 자체 JWT (HMAC-SHA256, Bearer, Access 단독). 시크릿은 환경변수로만 주입(커밋 금지, 32자 이상).
+  jwt:
+    secret: ${GIRINLOG_JWT_SECRET:}
+    access-token-ttl: ${GIRINLOG_JWT_TTL:P14D}   # ISO-8601 Duration. 기본 14일.
+  # GitHub OAuth (수동 흐름: /api/auth/github → callback). 자격증명은 환경변수로만.
+  oauth:
+    github:
+      client-id: ${GITHUB_CLIENT_ID:}
+      client-secret: ${GITHUB_CLIENT_SECRET:}
+      redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8080/api/auth/github/callback}
+      frontend-redirect-uri: ${FRONTEND_REDIRECT_URI:http://localhost:3000/oauth/callback}
+      scope: read:user
