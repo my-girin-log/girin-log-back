@@ -90,6 +90,10 @@ public class MemoSummary {
         return id;
     }
 
+    public Long userId() {
+        return userId;
+    }
+
     public LocalDate serviceDate() {
         return serviceDate;
     }
