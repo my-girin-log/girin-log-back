@@ -42,3 +42,9 @@ girinlog:
       redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8080/api/auth/github/callback}
       frontend-redirect-uri: ${FRONTEND_REDIRECT_URI:http://localhost:3000/oauth/callback}
       scope: read:user
+  silok:
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+      model: ${GEMINI_MODEL:gemini-2.0-flash}
+      timeout: ${GEMINI_TIMEOUT:PT30S}
