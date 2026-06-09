@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatus;
 public enum AuthErrorCode implements ErrorCode {
 
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
-    GITHUB_OAUTH_FAILED(HttpStatus.UNAUTHORIZED, "GitHub 로그인에 실패했습니다. 다시 시도해주세요.");
+    GITHUB_OAUTH_FAILED(HttpStatus.UNAUTHORIZED, "GitHub 로그인에 실패했습니다. 다시 시도해주세요."),
+    OAUTH_STATE_MISMATCH(HttpStatus.UNAUTHORIZED, "OAuth state가 일치하지 않습니다. 다시 로그인해주세요.");
 
     private final HttpStatus status;
     private final String defaultMessage;
