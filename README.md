@@ -45,6 +45,18 @@ git add vendor/codex && git commit -m "chore: codex 하네스 동기화"
 > submodule 은 "특정 커밋"을 가리킨다. 위 명령으로 갱신한 뒤 커밋해야 팀 전체가 같은 codex 버전을 본다.
 > 평소 `git pull` 만으로는 submodule 이 자동으로 안 따라온다. pull 후 `git submodule update` 를 함께 돌린다.
 
+### submodule 수정 주의
+
+- `vendor/codex` 내부 파일은 이 레포에서 직접 수정하지 않는다.
+- 계약 변경은 [girin-codex](https://github.com/my-girin-log/girin-codex) 에 별도 브랜치/PR로 올린다.
+- 이 레포에서는 의도한 경우에만 `vendor/codex` 포인터 변경을 커밋한다.
+- 확인:
+
+```bash
+git -C vendor/codex status
+git diff --submodule=log -- vendor/codex
+```
+
 ---
 
 ## 빌드 / 실행
