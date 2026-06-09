@@ -8,6 +8,20 @@
 
 > 한 줄 원칙: **`vendor/codex/api/openapi.yaml` 이 옳다. 코드가 명세와 다르면 틀린 건 코드다.**
 
+## submodule 사용 규칙
+
+- `vendor/codex` 내부 파일을 이 레포에서 직접 수정하지 않는다.
+- 계약·규칙 변경이 필요하면 `girin-codex` 레포에서 별도 브랜치/PR로 먼저 합의한다.
+- 이 레포에서는 의도한 계약 동기화 때만 `vendor/codex` **submodule 포인터 변경**을 커밋한다.
+- 포인터 변경 커밋 예: `chore: codex 하네스 동기화`
+- 작업 중 확인 명령:
+
+```bash
+git status
+git -C vendor/codex status
+git diff --submodule=log -- vendor/codex
+```
+
 ## 작업 전 반드시 확인 (순서대로)
 
 1. `vendor/codex/AGENTS.md` — 공통 에이전트 지침 · 절대 규칙 · 문서 우선순위
