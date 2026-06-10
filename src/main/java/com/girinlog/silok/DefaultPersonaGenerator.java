@@ -1,15 +1,19 @@
-package com.girinlog.persona.generation;
+package com.girinlog.silok;
 
+import com.girinlog.persona.generation.GeneratedPersona;
+import com.girinlog.persona.generation.PersonaGenerationInput;
+import com.girinlog.persona.generation.PersonaGenerator;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
  * 임시 Persona 생성기(MVP). 실제 LLM 연동 전까지 입력으로부터 결정적 플레이스홀더를 만든다.
- * TODO(공유/silok): 실록이 LLM 어댑터로 교체. 이 빈은 그때 @Primary 어댑터로 대체된다.
+ * 포트({@link PersonaGenerator})는 persona 도메인 소유, 구현은 silok가 가진다(coding.md 8절).
+ * TODO: 실록이 LLM 어댑터로 교체.
  */
 @Component
-public class StubPersonaGenerator implements PersonaGenerator {
+class DefaultPersonaGenerator implements PersonaGenerator {
 
     @Override
     public GeneratedPersona generate(PersonaGenerationInput input) {
