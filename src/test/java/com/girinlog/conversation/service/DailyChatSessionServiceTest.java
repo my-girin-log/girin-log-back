@@ -211,6 +211,11 @@ class DailyChatSessionServiceTest {
         }
 
         @Override
+        public boolean shouldEnd(DailyChatSession session) {
+            return false;
+        }
+
+        @Override
         public String generateClosingMessage(DailyChatSession session, EndedReason endedReason) {
             return "마무리";
         }

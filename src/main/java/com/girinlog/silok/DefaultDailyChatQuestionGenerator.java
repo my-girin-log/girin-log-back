@@ -84,6 +84,41 @@ class DefaultDailyChatQuestionGenerator implements DailyChatQuestionGenerator {
                 """.formatted(endedReason, conversationPrompt(session)));
     }
 
+    @Override
+    public boolean shouldEnd(DailyChatSession session) {
+        try {
+            LlmResponse response = llmClient.generate(new LlmRequest(
+                    LlmProvider.GEMINI,
+                    geminiProperties.getModel(),
+                    """
+                            너는 우테코 크루의 동료 실록이다. 지금까지 대화가 하루 회고로 충분한지 판단한다.
+                            응답은 반드시 아래 JSON만 반환한다. {"end": true 또는 false}
+                            """,
+                    """
+                            더 물을 가치가 있으면 false, 충분히 정리됐으면 true.
+                            followUpCount: %d
+                            maxFollowUpCount: %d
+                            conversation:
+                            %s
+                            """.formatted(session.followUpCount(), session.maxFollowUpCount(), conversationPrompt(session)),
+                    new LlmGenerationOptions(Duration.ofSeconds(30), LlmResponseFormat.JSON, 0.2, 64)
+            ));
+            return parseShouldEnd(response.content());
+        } catch (SilokLlmException exception) {
+            // 판단 실패 시 대화를 계속한다(안전한 기본값).
+            return false;
+        }
+    }
+
+    private boolean parseShouldEnd(String json) {
+        try {
+            EndDecision decision = objectMapper.readValue(json, EndDecision.class);
+            return decision != null && Boolean.TRUE.equals(decision.end());
+        } catch (JsonProcessingException exception) {
+            return false;
+        }
+    }
+
     private String generate(String userPrompt) {
         LlmResponse response = llmClient.generate(new LlmRequest(
                 LlmProvider.GEMINI,
@@ -145,5 +180,8 @@ class DefaultDailyChatQuestionGenerator implements DailyChatQuestionGenerator {
     }
 
     private record GeneratedDailyChatContent(String content) {
+    }
+
+    private record EndDecision(Boolean end) {
     }
 }
