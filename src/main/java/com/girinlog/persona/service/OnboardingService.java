@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.girinlog.auth.service.UserService;
 import com.girinlog.common.error.BusinessException;
+import com.girinlog.event.domain.EventType;
+import com.girinlog.event.service.EventLogRecorder;
 import com.girinlog.persona.analysis.BlogAnalyzer;
 import com.girinlog.persona.domain.OnboardingSurvey;
 import com.girinlog.persona.domain.Persona;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -35,6 +38,7 @@ public class OnboardingService {
     private final PersonaGenerator personaGenerator;
     private final BlogAnalyzer blogAnalyzer;
     private final UserService userService;
+    private final EventLogRecorder eventLogRecorder;
     private final ObjectMapper objectMapper;
 
     public OnboardingService(
@@ -44,6 +48,7 @@ public class OnboardingService {
             PersonaGenerator personaGenerator,
             BlogAnalyzer blogAnalyzer,
             UserService userService,
+            EventLogRecorder eventLogRecorder,
             ObjectMapper objectMapper) {
         this.onboardingSurveyRepository = onboardingSurveyRepository;
         this.personaSourceRepository = personaSourceRepository;
@@ -51,6 +56,7 @@ public class OnboardingService {
         this.personaGenerator = personaGenerator;
         this.blogAnalyzer = blogAnalyzer;
         this.userService = userService;
+        this.eventLogRecorder = eventLogRecorder;
         this.objectMapper = objectMapper;
     }
 
@@ -72,6 +78,8 @@ public class OnboardingService {
                 .orElseGet(() -> personaRepository.save(Persona.create(userId, generated)));
 
         userService.completeOnboarding(userId);
+        eventLogRecorder.record(userId, EventType.PERSONA_CREATED, Map.of("personaId", persona.id()));
+        eventLogRecorder.record(userId, EventType.ONBOARDING_COMPLETED, Map.of("personaId", persona.id()));
         return new OnboardingResult(persona.id(), true);
     }
 
