@@ -28,7 +28,7 @@ class DefaultPersonaGeneratorTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final PersonaGenerationInput input = new PersonaGenerationInput(
-            null, null, List.of(new PersonaGenerationInput.SurveyAnswer(1, "순서대로 정리해요")));
+            null, null, null, List.of(new PersonaGenerationInput.SurveyAnswer(1, "순서대로 정리해요")));
 
     private GeminiProperties properties(String apiKey) {
         GeminiProperties properties = new GeminiProperties();

@@ -71,6 +71,9 @@ class DefaultPersonaGenerator implements PersonaGenerator {
         if (input.blogUrl() != null && !input.blogUrl().isBlank()) {
             prompt.append("블로그 링크: ").append(input.blogUrl()).append('\n');
         }
+        if (input.blogContent() != null && !input.blogContent().isBlank()) {
+            prompt.append("블로그 본문(추출):\n").append(input.blogContent()).append('\n');
+        }
         if (input.rawText() != null && !input.rawText().isBlank()) {
             prompt.append("기존 글 원문:\n").append(input.rawText()).append('\n');
         }
@@ -96,7 +99,7 @@ class DefaultPersonaGenerator implements PersonaGenerator {
     /** LLM 사용 불가/실패 시 결정적 기본 Persona. 온보딩 완료를 막지 않는다. */
     private GeneratedPersona fallback(PersonaGenerationInput input) {
         int answerCount = input.answers() == null ? 0 : input.answers().size();
-        boolean hasWriting = (input.blogUrl() != null && !input.blogUrl().isBlank())
+        boolean hasWriting = (input.blogContent() != null && !input.blogContent().isBlank())
                 || (input.rawText() != null && !input.rawText().isBlank());
         String basis = hasWriting ? "기존 글과 설문" : "온보딩 설문";
         return new GeneratedPersona(
