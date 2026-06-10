@@ -1,13 +1,12 @@
 package com.girinlog.persona.controller;
 
+import com.girinlog.common.security.CurrentUserId;
 import com.girinlog.persona.controller.dto.SubmitOnboardingRequest;
 import com.girinlog.persona.controller.dto.SubmitOnboardingResponse;
 import com.girinlog.persona.service.OnboardingResult;
 import com.girinlog.persona.service.OnboardingService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,10 +29,10 @@ public class OnboardingController {
     @PostMapping("/submissions")
     @ResponseStatus(HttpStatus.CREATED)
     public SubmitOnboardingResponse submit(
-            @AuthenticationPrincipal Jwt jwt,
+            @CurrentUserId Long userId,
             @Valid @RequestBody SubmitOnboardingRequest request) {
         OnboardingResult result = onboardingService.submit(
-                Long.valueOf(jwt.getSubject()),
+                userId,
                 request.blogUrl(),
                 request.rawText(),
                 request.toSurveyAnswers());
