@@ -4,6 +4,7 @@ import com.girinlog.common.error.BusinessException;
 import com.girinlog.common.time.ServiceDay;
 import com.girinlog.conversation.ConversationErrorCode;
 import com.girinlog.conversation.domain.DailyChatSession;
+import com.girinlog.conversation.domain.DailyChatSessionStatus;
 import com.girinlog.conversation.domain.EndedReason;
 import com.girinlog.conversation.repository.DailyChatSessionRepository;
 import com.girinlog.event.domain.EventType;
@@ -106,6 +107,27 @@ public class DailyChatSessionService {
         session.end(EndedReason.USER_ENDED, closingMessage, endedAt);
         recordSessionEnded(userId, session);
         return session;
+    }
+
+    private static final String SYSTEM_CLOSING_MESSAGE = "오늘 대화는 여기서 마무리할게. 내일 또 이어서 기록하자.";
+
+    /** 06:00 배치: 해당 serviceDate의 OPEN 세션을 모두 자동 종료(SYSTEM_ENDED)한다. 반환값은 종료 건수. */
+    @Transactional
+    public int endOpenSessions(LocalDate serviceDate) {
+        List<DailyChatSession> openSessions =
+                dailyChatSessionRepository.findByServiceDateAndStatus(serviceDate, DailyChatSessionStatus.OPEN);
+        OffsetDateTime endedAt = now();
+        for (DailyChatSession session : openSessions) {
+            session.end(EndedReason.SYSTEM_ENDED, SYSTEM_CLOSING_MESSAGE, endedAt);
+            recordSessionEnded(session.userId(), session);
+        }
+        return openSessions.size();
+    }
+
+    /** 06:00 배치: 해당 serviceDate에 세션이 있는 사용자 id 목록. */
+    @Transactional(readOnly = true)
+    public List<Long> findUserIdsWithSessions(LocalDate serviceDate) {
+        return dailyChatSessionRepository.findDistinctUserIdsByServiceDate(serviceDate);
     }
 
     private void recordSessionEnded(Long userId, DailyChatSession session) {

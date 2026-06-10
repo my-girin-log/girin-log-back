@@ -68,6 +68,14 @@ public class Memo {
         this.status = MemoStatus.SUMMARIZED;
     }
 
+    /** 06:00 KST 일일 작업 공간 초기화 시 DRAFT Memo를 작업 공간에서 제외한다. */
+    public void archive() {
+        if (!isDraft()) {
+            throw new IllegalStateException("DRAFT 상태의 Memo만 ARCHIVED로 전환할 수 있습니다.");
+        }
+        this.status = MemoStatus.ARCHIVED;
+    }
+
     public boolean isDraft() {
         return status == MemoStatus.DRAFT;
     }

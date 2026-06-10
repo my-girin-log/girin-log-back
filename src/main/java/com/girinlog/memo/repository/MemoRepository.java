@@ -19,4 +19,7 @@ public interface MemoRepository extends JpaRepository<Memo, Long> {
     );
 
     Optional<Memo> findByIdAndUserId(Long id, Long userId);
+
+    /** 06:00 배치용: 특정 serviceDate의 모든 사용자 Memo를 상태로 조회. */
+    List<Memo> findByServiceDateAndStatus(LocalDate serviceDate, MemoStatus status);
 }
