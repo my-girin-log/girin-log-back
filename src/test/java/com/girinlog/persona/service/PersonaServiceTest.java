@@ -50,4 +50,22 @@ class PersonaServiceTest {
 
         assertThat(found.tone()).isEqualTo("담백한");
     }
+
+    @Test
+    @DisplayName("회고 접점: persona가 있으면 markdown을 준다")
+    void findPersonaMarkdownReturnsMarkdown() {
+        Persona persona = Persona.create(1L, new GeneratedPersona(
+                "담백한", "사건→감정", List.of("회고"), "핵심부터", "배운 점", "짧은 글", "요약", "# persona.md"));
+        when(personaRepository.findByUserId(1L)).thenReturn(Optional.of(persona));
+
+        assertThat(personaService.findPersonaMarkdown(1L)).contains("# persona.md");
+    }
+
+    @Test
+    @DisplayName("회고 접점: persona가 없으면 차단하지 않고 빈 값(graceful)")
+    void findPersonaMarkdownEmptyWhenMissing() {
+        when(personaRepository.findByUserId(1L)).thenReturn(Optional.empty());
+
+        assertThat(personaService.findPersonaMarkdown(1L)).isEmpty();
+    }
 }
