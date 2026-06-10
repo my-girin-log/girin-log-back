@@ -1,0 +1,13 @@
+package com.girinlog.event.domain;
+
+public enum EventType {
+    USER_SIGNED_IN,
+    ONBOARDING_COMPLETED,
+    PERSONA_CREATED,
+    MEMO_CREATED,
+    MEMO_SUMMARIZED,
+    CHAT_SESSION_STARTED,
+    CHAT_SESSION_ENDED,
+    DIARY_CREATED,
+    RETROSPECTIVE_CREATED
+}

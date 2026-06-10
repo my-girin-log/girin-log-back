@@ -2,6 +2,8 @@ package com.girinlog.memo.service;
 
 import com.girinlog.common.error.BusinessException;
 import com.girinlog.common.time.ServiceClockConfig;
+import com.girinlog.event.domain.EventType;
+import com.girinlog.event.service.EventLogRecorder;
 import com.girinlog.memo.MemoErrorCode;
 import com.girinlog.memo.domain.Memo;
 import com.girinlog.memo.domain.MemoStatus;
@@ -22,7 +24,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
 class MemoServiceTest {
@@ -40,12 +44,15 @@ class MemoServiceTest {
     @Mock
     private MemoSummaryGenerator memoSummaryGenerator;
 
+    @Mock
+    private EventLogRecorder eventLogRecorder;
+
     private MemoService memoService;
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-06-08T20:00:00Z"), ServiceClockConfig.KST);
-        memoService = new MemoService(memoRepository, memoSummaryRepository, memoSummaryGenerator, clock);
+        memoService = new MemoService(memoRepository, memoSummaryRepository, memoSummaryGenerator, eventLogRecorder, clock);
     }
 
     @Test
@@ -57,6 +64,7 @@ class MemoServiceTest {
 
         assertThat(memo.serviceDate()).isEqualTo(JUNE_8);
         assertThat(memo.status()).isEqualTo(MemoStatus.DRAFT);
+        then(eventLogRecorder).should().record(eq(USER_ID), eq(EventType.MEMO_CREATED), any());
     }
 
     @Test
@@ -91,6 +99,7 @@ class MemoServiceTest {
         assertThat(creation.memoSummaries()).hasSize(1);
         assertThat(creation.nextMemo().status()).isEqualTo(MemoStatus.DRAFT);
         assertThat(creation.nextMemo().content()).isEmpty();
+        then(eventLogRecorder).should().record(eq(USER_ID), eq(EventType.MEMO_SUMMARIZED), any());
     }
 
     @Test

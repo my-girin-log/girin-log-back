@@ -6,6 +6,8 @@ import com.girinlog.conversation.ConversationErrorCode;
 import com.girinlog.conversation.domain.DailyChatSession;
 import com.girinlog.conversation.domain.EndedReason;
 import com.girinlog.conversation.repository.DailyChatSessionRepository;
+import com.girinlog.event.domain.EventType;
+import com.girinlog.event.service.EventLogRecorder;
 import com.girinlog.memo.domain.MemoSummary;
 import com.girinlog.memo.domain.MemoSummaryItem;
 import com.girinlog.memo.repository.MemoSummaryRepository;
@@ -27,7 +29,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
 class DailyChatSessionServiceTest {
@@ -42,6 +46,9 @@ class DailyChatSessionServiceTest {
     @Mock
     private MemoSummaryRepository memoSummaryRepository;
 
+    @Mock
+    private EventLogRecorder eventLogRecorder;
+
     private DailyChatSessionService dailyChatSessionService;
 
     @BeforeEach
@@ -51,6 +58,7 @@ class DailyChatSessionServiceTest {
                 dailyChatSessionRepository,
                 memoSummaryRepository,
                 new StubDailyChatQuestionGenerator(),
+                eventLogRecorder,
                 clock
         );
     }
@@ -73,6 +81,7 @@ class DailyChatSessionServiceTest {
         assertThat(session.followUpCount()).isEqualTo(1);
         assertThat(session.conversation().getFirst().content()).isEqualTo("첫 질문");
         assertThat(memoSummary.chatAvailable()).isFalse();
+        then(eventLogRecorder).should().record(eq(USER_ID), eq(EventType.CHAT_SESSION_STARTED), any());
     }
 
     @Test
@@ -146,6 +155,20 @@ class DailyChatSessionServiceTest {
         assertThat(updated.isEnded()).isTrue();
         assertThat(updated.endedReason()).isEqualTo(EndedReason.MAX_FOLLOWUP);
         assertThat(updated.closingMessage()).isEqualTo("마무리");
+        then(eventLogRecorder).should().record(eq(USER_ID), eq(EventType.CHAT_SESSION_ENDED), any());
+    }
+
+    @Test
+    @DisplayName("사용자가 세션을 종료하면 CHAT_SESSION_ENDED 이벤트를 기록한다")
+    void end_session_records_chat_session_ended_event() {
+        DailyChatSession session = session(100L);
+        given(dailyChatSessionRepository.findByIdAndUserId(100L, USER_ID)).willReturn(Optional.of(session));
+
+        DailyChatSession ended = dailyChatSessionService.endSession(USER_ID, 100L);
+
+        assertThat(ended.isEnded()).isTrue();
+        assertThat(ended.endedReason()).isEqualTo(EndedReason.USER_ENDED);
+        then(eventLogRecorder).should().record(eq(USER_ID), eq(EventType.CHAT_SESSION_ENDED), any());
     }
 
     private DailyChatSession session(Long id) {
