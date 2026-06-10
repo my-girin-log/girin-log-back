@@ -1,9 +1,8 @@
 package com.girinlog.persona.controller;
 
+import com.girinlog.common.security.CurrentUserId;
 import com.girinlog.persona.controller.dto.PersonaResponse;
 import com.girinlog.persona.service.PersonaService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,7 +21,7 @@ public class PersonaController {
     }
 
     @GetMapping("/me")
-    public PersonaResponse getMyPersona(@AuthenticationPrincipal Jwt jwt) {
-        return PersonaResponse.from(personaService.getByUserId(Long.valueOf(jwt.getSubject())));
+    public PersonaResponse getMyPersona(@CurrentUserId Long userId) {
+        return PersonaResponse.from(personaService.getByUserId(userId));
     }
 }
