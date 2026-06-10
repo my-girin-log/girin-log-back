@@ -6,6 +6,8 @@ import com.girinlog.conversation.ConversationErrorCode;
 import com.girinlog.conversation.domain.DailyChatSession;
 import com.girinlog.conversation.domain.EndedReason;
 import com.girinlog.conversation.repository.DailyChatSessionRepository;
+import com.girinlog.event.domain.EventType;
+import com.girinlog.event.service.EventLogRecorder;
 import com.girinlog.memo.domain.MemoSummary;
 import com.girinlog.memo.domain.MemoSummaryItem;
 import com.girinlog.memo.repository.MemoSummaryRepository;
@@ -17,7 +19,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,17 +31,20 @@ public class DailyChatSessionService {
     private final DailyChatSessionRepository dailyChatSessionRepository;
     private final MemoSummaryRepository memoSummaryRepository;
     private final DailyChatQuestionGenerator dailyChatQuestionGenerator;
+    private final EventLogRecorder eventLogRecorder;
     private final Clock clock;
 
     public DailyChatSessionService(
             DailyChatSessionRepository dailyChatSessionRepository,
             MemoSummaryRepository memoSummaryRepository,
             DailyChatQuestionGenerator dailyChatQuestionGenerator,
+            EventLogRecorder eventLogRecorder,
             Clock clock
     ) {
         this.dailyChatSessionRepository = dailyChatSessionRepository;
         this.memoSummaryRepository = memoSummaryRepository;
         this.dailyChatQuestionGenerator = dailyChatQuestionGenerator;
+        this.eventLogRecorder = eventLogRecorder;
         this.clock = clock;
     }
 
@@ -59,7 +66,13 @@ public class DailyChatSessionService {
                 now
         );
         memoSummaries.forEach(MemoSummary::disableChat);
-        return dailyChatSessionRepository.save(session);
+        DailyChatSession savedSession = dailyChatSessionRepository.save(session);
+        eventLogRecorder.record(userId, EventType.CHAT_SESSION_STARTED, metadata()
+                .add("sessionId", savedSession.id())
+                .add("serviceDate", savedSession.serviceDate().toString())
+                .add("memoSummaryIds", savedSession.memoSummaryIds())
+                .toMap());
+        return savedSession;
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +89,7 @@ public class DailyChatSessionService {
         if (!session.canAskMore()) {
             String closingMessage = dailyChatQuestionGenerator.generateClosingMessage(session, EndedReason.MAX_FOLLOWUP);
             session.end(EndedReason.MAX_FOLLOWUP, closingMessage, answeredAt);
+            recordSessionEnded(userId, session);
             return session;
         }
 
@@ -90,7 +104,17 @@ public class DailyChatSessionService {
         OffsetDateTime endedAt = now();
         String closingMessage = dailyChatQuestionGenerator.generateClosingMessage(session, EndedReason.USER_ENDED);
         session.end(EndedReason.USER_ENDED, closingMessage, endedAt);
+        recordSessionEnded(userId, session);
         return session;
+    }
+
+    private void recordSessionEnded(Long userId, DailyChatSession session) {
+        eventLogRecorder.record(userId, EventType.CHAT_SESSION_ENDED, metadata()
+                .add("sessionId", session.id())
+                .add("serviceDate", session.serviceDate().toString())
+                .add("endedReason", session.endedReason().name())
+                .add("followUpCount", session.followUpCount())
+                .toMap());
     }
 
     private DailyChatSession findOpenSession(Long userId, Long sessionId) {
@@ -167,5 +191,23 @@ public class DailyChatSessionService {
 
     private OffsetDateTime now() {
         return OffsetDateTime.now(clock);
+    }
+
+    private Metadata metadata() {
+        return new Metadata();
+    }
+
+    private static class Metadata {
+
+        private final Map<String, Object> values = new LinkedHashMap<>();
+
+        Metadata add(String key, Object value) {
+            values.put(key, value);
+            return this;
+        }
+
+        Map<String, Object> toMap() {
+            return values;
+        }
     }
 }
