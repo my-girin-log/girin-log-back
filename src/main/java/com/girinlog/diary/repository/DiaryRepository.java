@@ -17,9 +17,9 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             select diary
             from Diary diary
             where diary.userId = :userId
-              and (:startDate is null or diary.serviceDate >= :startDate)
-              and (:endDate is null or diary.serviceDate <= :endDate)
-              and (:cursorDate is null or diary.serviceDate < :cursorDate)
+              and diary.serviceDate >= :startDate
+              and diary.serviceDate <= :endDate
+              and diary.serviceDate < :cursorDate
             order by diary.serviceDate desc
             """)
     List<Diary> findPageByDateRange(
@@ -34,8 +34,8 @@ public interface DiaryRepository extends JpaRepository<Diary, Long> {
             select diary.serviceDate
             from Diary diary
             where diary.userId = :userId
-              and (:startDate is null or diary.serviceDate >= :startDate)
-              and (:endDate is null or diary.serviceDate <= :endDate)
+              and diary.serviceDate >= :startDate
+              and diary.serviceDate <= :endDate
             order by diary.serviceDate asc
             """)
     List<LocalDate> findServiceDatesByDateRange(Long userId, LocalDate startDate, LocalDate endDate);

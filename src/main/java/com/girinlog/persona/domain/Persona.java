@@ -4,6 +4,7 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,7 +43,7 @@ public class Persona {
     @Column(name = "thinking_style", nullable = false)
     private String thinkingStyle;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "persona_recurring_interests", joinColumns = @JoinColumn(name = "persona_id"))
     @Column(name = "interest")
     private List<String> recurringInterests = new ArrayList<>();

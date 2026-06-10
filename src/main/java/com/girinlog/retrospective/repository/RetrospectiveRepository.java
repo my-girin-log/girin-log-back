@@ -16,7 +16,7 @@ public interface RetrospectiveRepository extends JpaRepository<Retrospective, Lo
             select retrospective
             from Retrospective retrospective
             where retrospective.userId = :userId
-              and (:cursorId is null or retrospective.id < :cursorId)
+              and retrospective.id < :cursorId
             order by retrospective.id desc
             """)
     List<Retrospective> findPage(Long userId, Long cursorId, Pageable pageable);

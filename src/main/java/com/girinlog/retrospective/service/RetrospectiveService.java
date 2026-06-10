@@ -53,9 +53,10 @@ public class RetrospectiveService {
     @Transactional(readOnly = true)
     public RetrospectivePage listRetrospectives(Long userId, String cursor, Integer limit) {
         int pageSize = normalizeLimit(limit);
+        Long cursorId = RetrospectiveCursor.decode(cursor);
         List<Retrospective> retrospectives = retrospectiveRepository.findPage(
                 userId,
-                RetrospectiveCursor.decode(cursor),
+                cursorId == null ? Long.MAX_VALUE : cursorId,
                 PageRequest.of(0, pageSize + 1)
         );
         if (retrospectives.size() <= pageSize) {
