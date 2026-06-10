@@ -94,6 +94,13 @@ public class DailyChatSessionService {
             return session;
         }
 
+        if (dailyChatQuestionGenerator.shouldEnd(session)) {
+            String closingMessage = dailyChatQuestionGenerator.generateClosingMessage(session, EndedReason.AI_DECIDED);
+            session.end(EndedReason.AI_DECIDED, closingMessage, answeredAt);
+            recordSessionEnded(userId, session);
+            return session;
+        }
+
         String followUpQuestion = dailyChatQuestionGenerator.generateFollowUpQuestion(session);
         session.addSilokFollowUpQuestion(followUpQuestion, answeredAt);
         return session;
