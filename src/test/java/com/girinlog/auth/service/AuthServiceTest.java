@@ -4,6 +4,7 @@ import com.girinlog.auth.domain.User;
 import com.girinlog.auth.jwt.JwtProvider;
 import com.girinlog.auth.oauth.GithubOAuthClient;
 import com.girinlog.auth.oauth.GithubUser;
+import com.girinlog.event.service.EventLogRecorder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,9 @@ class AuthServiceTest {
 
     @Mock
     private JwtProvider jwtProvider;
+
+    @Mock
+    private EventLogRecorder eventLogRecorder;
 
     @InjectMocks
     private AuthService authService;

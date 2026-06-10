@@ -2,6 +2,7 @@ package com.girinlog.persona.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.girinlog.auth.service.UserService;
+import com.girinlog.event.service.EventLogRecorder;
 import com.girinlog.persona.analysis.BlogAnalyzer;
 import com.girinlog.persona.domain.AnalysisStatus;
 import com.girinlog.persona.domain.Persona;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +47,8 @@ class OnboardingServiceTest {
     private BlogAnalyzer blogAnalyzer;
     @Mock
     private UserService userService;
+    @Mock
+    private EventLogRecorder eventLogRecorder;
 
     private OnboardingService onboardingService() {
         return new OnboardingService(
@@ -54,6 +58,7 @@ class OnboardingServiceTest {
                 personaGenerator,
                 blogAnalyzer,
                 userService,
+                eventLogRecorder,
                 new ObjectMapper());
     }
 
@@ -65,7 +70,11 @@ class OnboardingServiceTest {
     private void stubPersonaCreation() {
         when(personaGenerator.generate(any())).thenReturn(sampleGenerated());
         when(personaRepository.findByUserId(1L)).thenReturn(Optional.empty());
-        when(personaRepository.save(any(Persona.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(personaRepository.save(any(Persona.class))).thenAnswer(invocation -> {
+            Persona persona = invocation.getArgument(0);
+            ReflectionTestUtils.setField(persona, "id", 100L);
+            return persona;
+        });
     }
 
     private PersonaSource savedBlogSource() {
@@ -139,6 +148,7 @@ class OnboardingServiceTest {
     @DisplayName("이미 Persona가 있으면 새로 저장하지 않고 갱신한다")
     void submitRefreshesExistingPersona() {
         Persona existing = Persona.create(1L, sampleGenerated());
+        ReflectionTestUtils.setField(existing, "id", 100L);
         when(personaSourceRepository.save(any(PersonaSource.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(blogAnalyzer.fetchReadableText(any())).thenReturn(Optional.empty());
