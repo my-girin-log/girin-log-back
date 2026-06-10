@@ -104,6 +104,17 @@ public class MemoService {
         return ServiceDay.today(clock);
     }
 
+    /**
+     * 06:00 일일 배치: 해당 serviceDate의 DRAFT Memo를 모두 ARCHIVED로 전환한다(전 사용자).
+     * 변경은 영속성 컨텍스트 변경 감지로 반영된다. 반환값은 처리 건수.
+     */
+    @Transactional
+    public int archiveDraftMemos(LocalDate serviceDate) {
+        List<Memo> drafts = memoRepository.findByServiceDateAndStatus(serviceDate, MemoStatus.DRAFT);
+        drafts.forEach(Memo::archive);
+        return drafts.size();
+    }
+
     private MemoSummary toMemoSummary(
             Long userId,
             LocalDate date,
