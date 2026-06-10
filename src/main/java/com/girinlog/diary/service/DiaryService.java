@@ -26,6 +26,9 @@ public class DiaryService {
 
     private static final int DEFAULT_LIMIT = 20;
     private static final int MAX_LIMIT = 100;
+    // null 파라미터를 SQL에 넣지 않기 위한 경계 센티넬(PostgreSQL date 범위 내).
+    private static final LocalDate MIN_SERVICE_DATE = LocalDate.of(1, 1, 1);
+    private static final LocalDate MAX_SERVICE_DATE = LocalDate.of(9999, 12, 31);
 
     private final DiaryRepository diaryRepository;
     private final DailyChatSessionRepository dailyChatSessionRepository;
@@ -51,11 +54,12 @@ public class DiaryService {
     public DiaryPage listDiaries(Long userId, LocalDate startDate, LocalDate endDate, String cursor, Integer limit) {
         validateDateRange(startDate, endDate);
         int pageSize = normalizeLimit(limit);
+        LocalDate cursorDate = DiaryCursor.decode(cursor);
         List<Diary> diaries = diaryRepository.findPageByDateRange(
                 userId,
-                startDate,
-                endDate,
-                DiaryCursor.decode(cursor),
+                startDate == null ? MIN_SERVICE_DATE : startDate,
+                endDate == null ? MAX_SERVICE_DATE : endDate,
+                cursorDate == null ? MAX_SERVICE_DATE : cursorDate,
                 PageRequest.of(0, pageSize + 1)
         );
 
@@ -71,7 +75,10 @@ public class DiaryService {
     @Transactional(readOnly = true)
     public List<LocalDate> listDiaryDates(Long userId, LocalDate startDate, LocalDate endDate) {
         validateDateRange(startDate, endDate);
-        return diaryRepository.findServiceDatesByDateRange(userId, startDate, endDate);
+        return diaryRepository.findServiceDatesByDateRange(
+                userId,
+                startDate == null ? MIN_SERVICE_DATE : startDate,
+                endDate == null ? MAX_SERVICE_DATE : endDate);
     }
 
     @Transactional(readOnly = true)
