@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.girinlog.auth.service.UserService;
 import com.girinlog.common.error.BusinessException;
+import com.girinlog.persona.analysis.BlogAnalyzer;
 import com.girinlog.persona.domain.OnboardingSurvey;
 import com.girinlog.persona.domain.Persona;
 import com.girinlog.persona.domain.PersonaSource;
@@ -18,10 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
- * 온보딩 제출 흐름: 설문/원천 저장 → Persona 생성(포트) → User 온보딩 완료.
- * 일부 입력만 있어도 Persona를 생성한다(product 2-3).
+ * 온보딩 제출 흐름: 설문/원천 저장 → (블로그 분석) → Persona 생성(포트) → User 온보딩 완료.
+ * 일부 입력만 있어도, 블로그 분석이 실패해도 Persona를 생성한다(product 2-3, 비차단).
  */
 @Service
 @Transactional
@@ -31,6 +33,7 @@ public class OnboardingService {
     private final PersonaSourceRepository personaSourceRepository;
     private final PersonaRepository personaRepository;
     private final PersonaGenerator personaGenerator;
+    private final BlogAnalyzer blogAnalyzer;
     private final UserService userService;
     private final ObjectMapper objectMapper;
 
@@ -39,12 +42,14 @@ public class OnboardingService {
             PersonaSourceRepository personaSourceRepository,
             PersonaRepository personaRepository,
             PersonaGenerator personaGenerator,
+            BlogAnalyzer blogAnalyzer,
             UserService userService,
             ObjectMapper objectMapper) {
         this.onboardingSurveyRepository = onboardingSurveyRepository;
         this.personaSourceRepository = personaSourceRepository;
         this.personaRepository = personaRepository;
         this.personaGenerator = personaGenerator;
+        this.blogAnalyzer = blogAnalyzer;
         this.userService = userService;
         this.objectMapper = objectMapper;
     }
@@ -54,10 +59,11 @@ public class OnboardingService {
         String answersJson = serialize(answers);
 
         onboardingSurveyRepository.save(OnboardingSurvey.of(userId, answersJson));
-        saveSources(userId, blogUrl, rawText, answersJson);
+        String blogContent = analyzeBlogIfPresent(userId, blogUrl);
+        saveTextAndSurveySources(userId, rawText, answersJson);
 
         GeneratedPersona generated = personaGenerator.generate(
-                new PersonaGenerationInput(blogUrl, rawText, answers));
+                new PersonaGenerationInput(blogUrl, blogContent, rawText, answers));
         Persona persona = personaRepository.findByUserId(userId)
                 .map(existing -> {
                     existing.refresh(generated);
@@ -69,10 +75,27 @@ public class OnboardingService {
         return new OnboardingResult(persona.id(), true);
     }
 
-    private void saveSources(Long userId, String blogUrl, String rawText, String answersJson) {
-        if (blogUrl != null && !blogUrl.isBlank()) {
-            personaSourceRepository.save(PersonaSource.blogUrl(userId, blogUrl));
+    /**
+     * 블로그 링크가 있으면 PersonaSource를 만들고 본문을 추출한다.
+     * 성공 시 COMPLETED + 본문 반환, 실패 시 FAILED + null(생성은 계속).
+     */
+    private String analyzeBlogIfPresent(Long userId, String blogUrl) {
+        if (blogUrl == null || blogUrl.isBlank()) {
+            return null;
         }
+        PersonaSource source = personaSourceRepository.save(PersonaSource.blogUrl(userId, blogUrl));
+        source.markAnalyzing();
+
+        Optional<String> content = blogAnalyzer.fetchReadableText(blogUrl);
+        if (content.isPresent()) {
+            source.markCompleted();
+            return content.get();
+        }
+        source.markFailed();
+        return null;
+    }
+
+    private void saveTextAndSurveySources(Long userId, String rawText, String answersJson) {
         if (rawText != null && !rawText.isBlank()) {
             personaSourceRepository.save(PersonaSource.text(userId, rawText));
         }

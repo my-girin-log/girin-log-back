@@ -65,6 +65,19 @@ public class PersonaSource {
         return new PersonaSource(userId, SourceType.SURVEY, answersJson, AnalysisStatus.COMPLETED);
     }
 
+    public void markAnalyzing() {
+        this.analysisStatus = AnalysisStatus.ANALYZING;
+    }
+
+    public void markCompleted() {
+        this.analysisStatus = AnalysisStatus.COMPLETED;
+    }
+
+    /** 분석 실패해도 설문 기반 Persona 생성은 계속된다(data-model PersonaSource). */
+    public void markFailed() {
+        this.analysisStatus = AnalysisStatus.FAILED;
+    }
+
     @PrePersist
     void onCreate() {
         this.createdAt = Instant.now();
